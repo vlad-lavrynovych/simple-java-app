@@ -1,0 +1,5 @@
+appName: simple-java-app-test
+replicaCount: 3
+image:
+  repository: ${DOCKER_REGISTRY}
+  tag: ${BUILD_NUMBER}

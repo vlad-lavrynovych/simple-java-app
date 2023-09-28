@@ -1,0 +1,57 @@
+agent:
+  podName: default
+  customJenkinsLabels: default
+  volumes:
+    - type: PVC
+      claimName: jenkins-agent
+      mountPath: /home/jenkins
+      readOnly: false
+
+additionalAgents:
+  maven:
+    podName: maven
+    customJenkinsLabels: maven
+    image: jenkins/jnlp-agent-maven
+    tag: jdk11
+    volumes:
+      - type: PVC
+        claimName: jenkins-agent
+        mountPath: /home/jenkins
+        readOnly: false
+    resources:
+      limits:
+        cpu: "1"
+        memory: "2048Mi"
+
+controller:
+  JCasC:
+    securityRealm: |-
+      local:
+        allowsSignup: false
+        enableCaptcha: false
+        users:
+        - id: admin
+          name: admin
+          password: admin
+    configScripts:
+      creds: |
+        credentials:
+          system:
+            domainCredentials:
+              - domain:
+                  name: "github.com"
+                  description: "GitHub domain"
+                  specifications:
+                    - hostnameSpecification:
+                        includes: "github.com"
+                credentials:
+                  - usernamePassword:
+                      scope: GLOBAL
+                      id: github_credentials
+                      username: vlad-lavrynovych
+                      password: vlad300820001@gmail.com
+                  - usernamePassword:
+                      scope: GLOBAL
+                      id: docker-hub-credentials
+                      username: vlavrynovych
+                      password: nikitos007

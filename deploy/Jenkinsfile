@@ -1,0 +1,63 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = 'vlavrynovych/simple-java-app'
+    }
+
+    stages {
+        stage('Build, Test, Create Image, and Push to Docker Hub') {
+            steps {
+                git 'https://github.com/vlad-lavrynovych/simple-java-app'
+
+                // Build and test
+                sh 'mvn clean package'
+
+                // Create a Docker image
+                script {
+                    def imageName = "${DOCKER_REGISTRY}:${BUILD_NUMBER}"
+                    sh "docker build -t ${imageName} ."
+                }
+
+                // Push the Docker image to Docker Hub
+                withDockerRegistry(credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/') {
+                    sh "docker push ${DOCKER_REGISTRY}:${BUILD_NUMBER}"
+                }
+            }
+        }
+
+        stage('Deploy to Stage Test') {
+            steps {
+                // Pull the Docker image from Docker Hub
+                script {
+                    def imageName = "${DOCKER_REGISTRY}:${BUILD_NUMBER}"
+                    sh "docker pull ${imageName}"
+                }
+
+                // Deploy to the test environment with 'test' profile using Helm
+                sh "helm upgrade --install --values values-test.yaml simple-java-app-test --set image.tag=${BUILD_NUMBER} --set spring.profiles.active=test --set stage=test"
+            }
+        }
+
+        stage('Deploy to Stage Prod') {
+            steps {
+                // Pull the Docker image from Docker Hub
+                script {
+                    def imageName = "${DOCKER_REGISTRY}:${BUILD_NUMBER}"
+                    sh "docker pull ${imageName}"
+                }
+
+                // Deploy to the production environment with 'prod' profile using Helm
+                sh "helm upgrade --install --values values-prod.yaml simple-java-app-prod --set image.tag=${BUILD_NUMBER} --set spring.profiles.active=prod --set stage=prod"
+            }
+        }
+    }
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
+    }
+}
