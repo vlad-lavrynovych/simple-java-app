@@ -35,7 +35,7 @@ pipeline {
                 }
 
                 // Deploy to the test environment with 'test' profile using Helm
-                sh "helm upgrade --install --values values-test.yaml simple-java-app-test --set image.tag=${BUILD_NUMBER} --set spring.profiles.active=test --set stage=test"
+                sh "helm upgrade --install -n jenkins --values values-test.yaml simple-java-app-test --set image.tag=${BUILD_NUMBER} --set spring.profiles.active=test --set stage=test"
             }
         }
 
@@ -48,7 +48,7 @@ pipeline {
                 }
 
                 // Deploy to the production environment with 'prod' profile using Helm
-                sh "helm upgrade --install --values values-prod.yaml simple-java-app-prod --set image.tag=${BUILD_NUMBER} --set spring.profiles.active=prod --set stage=prod"
+                sh "helm upgrade --install -n jenkins --values values-prod.yaml simple-java-app-prod --set image.tag=${BUILD_NUMBER} --set spring.profiles.active=prod --set stage=prod"
             }
         }
     }
