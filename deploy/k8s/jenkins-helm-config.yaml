@@ -8,6 +8,22 @@ agent:
       mountPath: /home/jenkins
       readOnly: false
 
+additionalAgents:
+  maven:
+    podName: maven
+    customJenkinsLabels: maven
+    image: jenkins/jnlp-agent-maven
+    tag: jdk11
+    volumes:
+      - type: PVC
+        claimName: jenkins-agent
+        mountPath: /home/jenkins
+        readOnly: false
+    resources:
+      limits:
+        cpu: "1"
+        memory: "2048Mi"
+
 controller:
   numExecutors: 2
   additionalPlugins:
@@ -44,13 +60,13 @@ controller:
                       id: docker-hub-credentials
                       username: vlavrynovych
                       password: nikitos007
-tool:
-  maven:
-    installations:
-      - name: maven3
-        home: "/maven3"
-        properties:
-          - installSource:
-              installers:
-                - maven:
-                    id: "3.8.4"
+  tool:
+    maven:
+      installations:
+        - name: maven3
+          home: "/maven3"
+          properties:
+            - installSource:
+                installers:
+                  - maven:
+                      id: "3.8.4"

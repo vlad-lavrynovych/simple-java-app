@@ -1,0 +1,30 @@
+jenkins:
+  installPlugins:
+    - pipeline-maven
+    - git
+
+  # Configure the Kubernetes agents
+  agent:
+    numExecutors: 2
+
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 2000m
+      memory: 4096Mi
+
+  # Configure a persistent volume for the Jenkins home directory
+  persistentVolume:
+    enabled: true
+    storageClassName: standard
+    accessModes:
+      - ReadWriteOnce
+    size: 8Gi
+
+  # Configure a secret to store the Jenkins admin password
+  jenkinsAdminPasswordSecret:
+    enabled: true
+    name: jenkins-admin-password
+    key: admin
