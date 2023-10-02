@@ -1,3 +1,4 @@
+#  https://github.com/jenkinsci/helm-charts/blob/main/charts/jenkins/VALUES_SUMMARY.md
 agent:
   podName: default
   customJenkinsLabels: default
@@ -7,23 +8,11 @@ agent:
       mountPath: /home/jenkins
       readOnly: false
 
-additionalAgents:
-  maven:
-    podName: maven
-    customJenkinsLabels: maven
-    image: jenkins/jnlp-agent-maven
-    tag: jdk11
-    volumes:
-      - type: PVC
-        claimName: jenkins-agent
-        mountPath: /home/jenkins
-        readOnly: false
-    resources:
-      limits:
-        cpu: "1"
-        memory: "2048Mi"
-
 controller:
+  numExecutors: 2
+  additionalPlugins:
+    - maven-plugin:3.23
+    - pipeline-maven:1342.vfc697b_789147
   JCasC:
     securityRealm: |-
       local:
@@ -55,3 +44,13 @@ controller:
                       id: docker-hub-credentials
                       username: vlavrynovych
                       password: nikitos007
+tool:
+  maven:
+    installations:
+      - name: maven3
+        home: "/maven3"
+        properties:
+          - installSource:
+              installers:
+                - maven:
+                    id: "3.8.4"

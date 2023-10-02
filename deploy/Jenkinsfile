@@ -11,7 +11,9 @@ pipeline {
                 git 'https://github.com/vlad-lavrynovych/simple-java-app'
 
                 // Build and test
-                sh 'mvn clean package'
+                withMaven(traceability:true) {
+                    sh 'mvn clean package'
+                }
 
                 // Create a Docker image
                 script {
