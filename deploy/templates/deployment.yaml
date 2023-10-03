@@ -13,5 +13,5 @@ spec:
         app: {{ .Values.appName }}
     spec:
       containers:
-        - name: {{ .Values.image.repository }}
-          image: {{ .Values.image.image }}:{{ .Values.image.tag }}
+        - name: {{ .Values.appName }}
+          image: {{ .Values.image.repository }}/{{ .Values.image.image }}:{{ .Values.image.tag }}
