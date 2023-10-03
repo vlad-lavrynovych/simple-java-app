@@ -14,4 +14,4 @@ spec:
     spec:
       containers:
         - name: {{ .Values.image.repository }}
-          image: {{ .Values.image.image }}:${BUILD_NUMBER}
+          image: {{ .Values.image.image }}:{{ .Values.image.tag }}
