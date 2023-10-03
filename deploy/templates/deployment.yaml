@@ -15,3 +15,6 @@ spec:
       containers:
         - name: {{ .Values.appName }}
           image: {{ .Values.image.repository }}/{{ .Values.image.image }}:{{ .Values.image.tag }}
+          env:
+              - name: SPRING_PROFILES_ACTIVE
+                value: { { .Values.stage } }

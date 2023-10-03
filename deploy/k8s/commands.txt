@@ -1,7 +1,12 @@
+
+kubectl create namespace jenkins
+kubectl create namespace test
+kubectl create namespace prod
+
 kubectl create -f jenkins-pvc.yaml
-helm upgrade --install -f jenkins-helm-config.yaml jenkins jenkins/jenkins
-kubectl port-forward svc/jenkins 8080:8080
+helm upgrade --install -f jenkins-helm-config.yaml jenkins jenkins/jenkins --namespace jenkins
+kubectl port-forward svc/jenkins 8080:8080 --namespace jenkins
 kubectl create clusterrolebinding cluster-admin --clusterrole=cluster-admin
 
-kubectl delete pvc --all
-helm uninstall jenkins
+kubectl delete pvc --all --namespace jenkins
+helm uninstall jenkins --namespace jenkins
