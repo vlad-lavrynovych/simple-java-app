@@ -1,60 +1,112 @@
+// https://gist.github.com/darinpope/67c297b3ccc04c17991b22e1422df45a
 pipeline {
   agent {
     kubernetes {
-      inheritFrom 'maven'
+      yaml '''
+        apiVersion: v1
+        kind: Pod
+        spec:
+          containers:
+          - name: maven
+            image: maven:3.8.3-openjdk-17
+            command:
+            - cat
+            tty: true
+            env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: DOCKER_HOST
+              value: tcp://localhost:2375
+          - name: helm
+            image: alpine/helm:3.11.1
+            command:
+            - cat
+            tty: true
+            env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: DOCKER_HOST
+              value: tcp://localhost:2375
+          - name: docker
+            image: docker:19.03.8-dind
+            securityContext:
+              privileged: true
+            volumeMounts:
+              - name: dind-storage
+                mountPath: /var/lib/docker
+          volumes:
+          - name: dind-storage
+            emptyDir: {}
+        '''
     }
   }
-
     environment {
-        DOCKER_REGISTRY = 'vlavrynovych/simple-java-app'
+        DOCKER_REGISTRY = 'vlavrynovych'
+        DOCKER_IMAGE = 'simple-java-app'
+        DOCKER_CREDS = credentials('docker-hub-credentials')
     }
 
     stages {
         stage('Build, Test, Create Image, and Push to Docker Hub') {
             steps {
-                git 'https://github.com/vlad-lavrynovych/simple-java-app'
+                container('maven') {
+                  sh 'mvn -version'
+                  git 'https://github.com/vlad-lavrynovych/simple-java-app'
 
-                // Build and test
-                withMaven(traceability:true) {
-                    sh 'mvn clean package'
+                  // Build and test
+                  sh 'mvn clean package'
                 }
+                container('docker') {
+                  sh "docker login -u $DOCKER_CREDS_USR -p $DOCKER_CREDS_PSW"
+                  script {
+                      def imageName = "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${BUILD_NUMBER}"
+                      sh "docker build -t ${imageName} ."
+                  }
 
-                // Create a Docker image
-                script {
-                    def imageName = "${DOCKER_REGISTRY}:${BUILD_NUMBER}"
-                    sh "docker build -t ${imageName} ."
-                }
-
-                // Push the Docker image to Docker Hub
-                withDockerRegistry(credentialsId: 'docker-hub-credentials', url: 'https://index.docker.io/v1/') {
-                    sh "docker push ${DOCKER_REGISTRY}:${BUILD_NUMBER}"
+                  // Push the Docker image to Docker Hub
+                  sh "docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${BUILD_NUMBER}"
                 }
             }
         }
 
         stage('Deploy to Stage Test') {
             steps {
+                container('docker') {
+
                 // Pull the Docker image from Docker Hub
                 script {
-                    def imageName = "${DOCKER_REGISTRY}:${BUILD_NUMBER}"
+                    def imageName = "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${BUILD_NUMBER}"
                     sh "docker pull ${imageName}"
                 }
-
+                }
+                container('helm') {
+                git 'https://github.com/vlad-lavrynovych/simple-java-app'
                 // Deploy to the test environment with 'test' profile using Helm
-                sh "helm upgrade --install -n jenkins --values values-test.yaml simple-java-app-test --set image.tag=${BUILD_NUMBER} --set spring.profiles.active=test --set stage=test"
+                sh "helm upgrade --install --values ./deploy/values-test.yaml simple-java-app-test ./deploy/ --set image.tag=${BUILD_NUMBER} --set spring.profiles.active=test --set stage=test"
+                }
             }
         }
 
         stage('Deploy to Stage Prod') {
             steps {
+                container('docker') {
+
                 // Pull the Docker image from Docker Hub
                 script {
-                    def imageName = "${DOCKER_REGISTRY}:${BUILD_NUMBER}"
+                    def imageName = "${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${BUILD_NUMBER}"
                     sh "docker pull ${imageName}"
                 }
-
+                }
+                container('helm') {
+                git 'https://github.com/vlad-lavrynovych/simple-java-app'
+                sh 'ls'
                 // Deploy to the production environment with 'prod' profile using Helm
-                sh "helm upgrade --install -n jenkins --values values-prod.yaml simple-java-app-prod --set image.tag=${BUILD_NUMBER} --set spring.profiles.active=prod --set stage=prod"
+                sh "helm upgrade --install --values ./deploy/values-prod.yaml simple-java-app-prod ./deploy/ --set image.tag=${BUILD_NUMBER} --set spring.profiles.active=prod --set stage=prod"
+                }
             }
         }
     }
