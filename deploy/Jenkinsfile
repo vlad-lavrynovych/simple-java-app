@@ -86,7 +86,7 @@ pipeline {
                 container('helm') {
                 git 'https://github.com/vlad-lavrynovych/simple-java-app'
                 // Deploy to the test environment with 'test' profile using Helm
-                sh "helm upgrade --install --values ./deploy/values-test.yaml simple-java-app-test ./deploy/ --set image.tag=${BUILD_NUMBER} --set spring.profiles.active=test --set stage=test"
+                sh "helm upgrade --install --values ./deploy/values-test.yaml simple-java-app-test ./deploy/ --set image.tag=${BUILD_NUMBER} --set image.repository=${DOCKER_REGISTRY}  --set image.image=${DOCKER_IMAGE} --set spring.profiles.active=test --set stage=test"
                 }
             }
         }
@@ -105,7 +105,7 @@ pipeline {
                 git 'https://github.com/vlad-lavrynovych/simple-java-app'
                 sh 'ls'
                 // Deploy to the production environment with 'prod' profile using Helm
-                sh "helm upgrade --install --values ./deploy/values-prod.yaml simple-java-app-prod ./deploy/ --set image.tag=${BUILD_NUMBER} --set spring.profiles.active=prod --set stage=prod"
+                sh "helm upgrade --install --values ./deploy/values-prod.yaml simple-java-app-prod ./deploy/ --set image.tag=${BUILD_NUMBER} --set image.repository=${DOCKER_REGISTRY}  --set image.image=${DOCKER_IMAGE} --set spring.profiles.active=prod --set stage=prod"
                 }
             }
         }
