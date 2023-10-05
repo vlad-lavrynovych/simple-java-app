@@ -14,7 +14,8 @@ controller:
     - blueocean:1.27.8
     - kubernetes:4029.v5712230ccb_f8
     - workflow-aggregator:596.v8c21c963d92d
-    - configuration-as-code:1670.v564dc8b_982d0
+    - configuration-as-code:1714.v09593e830cfa
+    - job-dsl:1.85
   JCasC:
     securityRealm: |-
       local:
@@ -46,12 +47,23 @@ controller:
                       id: docker-hub-credentials
                       username: vlavrynovych
                       password: nikitos007
-tool:
-  maven:
-    installations:
-      - name: "m3"
-        properties:
-          - installSource:
-              installers:
-                - maven:
-                    id: "3.6.2"
+      jobs-config: |
+        jobs:
+          - script: >
+              pipelineJob('simple-java-app') {
+                  definition {
+                      cpsScm {
+                          scm {
+                              git {
+                                  remote {
+                                      url('https://github.com/vlad-lavrynovych/simple-java-app')
+                                  }
+                                  branch('*/master')
+                                  scriptPath('deploy/Jenkinsfile')
+                              }
+                          }
+                          lightweight()
+                      }
+                  }
+              }
+
